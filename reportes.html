@@ -414,7 +414,39 @@
   <img src="https://cdn-icons-png.flaticon.com/512/6073/6073873.png" alt="Administrador">
 </div>
 
+<div class="settings-icon" style="cursor: pointer;">
+    <ion-icon name="settings-outline" style="font-size: 24px;"></ion-icon>
+  </div>
       </div>
+<div id="settingsModal" style="
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+  z-index: 200;
+  width: 300px;
+">
+  <h3 style="margin-bottom: 10px;">Actualizar cuenta</h3>
+
+  <p id="userEmailDisplay" style="font-size: 14px; margin-bottom: 15px; color: #333;"></p>
+
+  <label>Contraseña actual</label>
+  <input type="password" id="currentPassword" placeholder="Contraseña actual" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc;">
+
+  <label>Nuevo correo</label>
+  <input type="email" id="newEmail" placeholder="Nuevo correo" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc;">
+
+  <label>Nueva contraseña</label>
+  <input type="password" id="newPassword" placeholder="Nueva contraseña" style="width: 100%; padding: 8px; margin-bottom: 20px; border: 1px solid #ccc;">
+
+  <button onclick="updateAccount()" style="background-color: #2a2185; color: white; padding: 10px; width: 100%; border: none; border-radius: 5px;">Actualizar</button>
+  <button onclick="closeSettings()" style="margin-top: 10px; width: 100%; border: none; background: transparent; color: #2a2185;">Cancelar</button>
+</div>
 
       <div class="cardBox" id="dashboard">
         <!-- Cards -->
@@ -507,6 +539,69 @@
 </div>
     </div>
   </div>
+ <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCzk6P6eFNCagNWgDJgoyqxUS9ZOZQP1_0",
+    authDomain: "reporte-dashboard-big-data.firebaseapp.com",
+    projectId: "reporte-dashboard-big-data",
+    storageBucket: "reporte-dashboard-big-data.appspot.com",
+    messagingSenderId: "721546205620",
+    appId: "1:721546205620:web:ab29d6ef0977d6a0fc3ae1",
+    measurementId: "G-D3SC3HZM45"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  window.updateAccount = async () => {
+    const newEmail = document.getElementById("newEmail").value;
+    const newPassword = document.getElementById("newPassword").value;
+    const currentPassword = document.getElementById("currentPassword").value;
+
+    const user = auth.currentUser;
+
+    if (!user || !currentPassword) {
+      alert("Debes estar logueado y proporcionar tu contraseña actual.");
+      return;
+    }
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+
+    try {
+      await reauthenticateWithCredential(user, credential);
+      if (newEmail) {
+        await updateEmail(user, newEmail);
+        alert("Correo actualizado.");
+      }
+      if (newPassword) {
+        await updatePassword(user, newPassword);
+        alert("Contraseña actualizada.");
+      }
+      closeSettings();
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
+  };
+
+  window.closeSettings = () => {
+    document.getElementById("settingsModal").style.display = "none";
+  };
+
+  document.querySelector(".settings-icon").addEventListener("click", () => {
+  const user = auth.currentUser;
+  if (user) {
+    document.getElementById("userEmailDisplay").textContent = "Correo registrado: " + user.email;
+  } else {
+    document.getElementById("userEmailDisplay").textContent = "No hay usuario autenticado.";
+  }
+  document.getElementById("settingsModal").style.display = "block";
+});
+
+</script>
+
    <script>
   const toggle = document.querySelector('.toggle');
   const navigation = document.querySelector('.navigation');
