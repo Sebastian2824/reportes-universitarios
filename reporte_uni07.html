@@ -456,10 +456,11 @@
 
       <!-- Reporte general embebido (Dashboard) -->
       <div class="report-container" id="dashboard-embed">
-       <iframe title="SOFTWARE BI - UNI - CONSULTA 07" width="100%" height="770" src="https://app.powerbi.com/view?r=eyJrIjoiNmVlZDhlYjAtNGFlNS00YzlmLTg4ODItMjZmNTQzMTRlZDc5IiwidCI6ImMyZDEyYzg2LTU4OTgtNDc4OC04MzE5LTdkNGVkNWU5OWM0OSIsImMiOjR9" frameborder="0" allowFullScreen="true"></iframe>
-         </div>
+      <div id="iframeContainer">Cargando dashboard...</div>
+    </div>
  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
   import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
   const firebaseConfig = {
@@ -474,6 +475,7 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db = getFirestore(app);
 
   window.updateAccount = async () => {
     const newEmail = document.getElementById("newEmail").value;
@@ -518,6 +520,24 @@
   }
   document.getElementById("settingsModal").style.display = "block";
 });
+
+
+const coleccion = "dashboards";
+const idDocumento = "uni-07"; 
+
+async function cargarDashboard() {
+  const ref = doc(db, coleccion, idDocumento);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const iframeHtml = snap.data().iframe;
+    document.getElementById("iframeContainer").innerHTML = iframeHtml;
+  } else {
+    document.getElementById("iframeContainer").innerHTML = "⚠️ Dashboard no encontrado.";
+  }
+}
+
+cargarDashboard();
 
 </script>
 
