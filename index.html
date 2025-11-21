@@ -17,6 +17,8 @@
       --uni: #7d3c98;
       --light-blue: #4a6bff;
       --light-purple: #9c4dff;
+      --success: #28a745;
+      --error: #dc3545;
     }
 
     * {
@@ -38,7 +40,7 @@
 
     .login-container {
       position: relative;
-      width: 400px;
+      width: 450px;
       background: rgba(255, 255, 255, 0.95);
       border-radius: 20px;
       padding: 40px;
@@ -80,31 +82,52 @@
       color: var(--blue);
       margin-bottom: 8px;
       font-weight: 600;
-      font-size: 0.9em;
+      font-size: 0.95em;
     }
 
     .login-form .input-group input {
       width: 100%;
-      padding: 15px 20px 15px 45px;
+      padding: 16px 50px 16px 50px;
       border: 2px solid rgba(42, 33, 133, 0.2);
-      border-radius: 10px;
-      font-size: 1em;
+      border-radius: 12px;
+      font-size: 0.95em;
       transition: all 0.3s;
-      background-color: rgba(255, 255, 255, 0.8);
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .login-form .input-group input::placeholder {
+      color: var(--black2);
+      font-size: 0.95em;
+      opacity: 0.8;
     }
 
     .login-form .input-group input:focus {
       border-color: var(--blue);
       outline: none;
-      box-shadow: 0 0 0 3px rgba(42, 33, 133, 0.1);
+      box-shadow: 0 0 0 3px rgba(42, 33, 133, 0.15);
+      background-color: white;
     }
 
-    .login-form .input-group ion-icon {
+    .login-form .input-group .input-icon {
       position: absolute;
-      left: 15px;
-      top: 40px;
-      font-size: 1.2em;
+      left: 18px;
+      top: 42px;
+      font-size: 1.4em;
       color: var(--blue);
+    }
+
+    .login-form .input-group .toggle-password {
+      position: absolute;
+      right: 18px;
+      top: 42px;
+      font-size: 1.4em;
+      color: var(--blue);
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .login-form .input-group .toggle-password:hover {
+      color: var(--uni);
     }
 
     .remember-forgot {
@@ -112,7 +135,7 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 25px;
-      font-size: 0.9em;
+      font-size: 0.95em;
     }
 
     .remember-forgot label {
@@ -124,6 +147,7 @@
 
     .remember-forgot input {
       margin-right: 8px;
+      transform: scale(1.2);
     }
 
     .remember-forgot a {
@@ -138,12 +162,12 @@
 
     .login-btn {
       width: 100%;
-      padding: 15px;
+      padding: 16px;
       background: linear-gradient(to right, var(--blue), var(--uni));
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       color: white;
-      font-size: 1em;
+      font-size: 1.05em;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
@@ -159,7 +183,7 @@
       text-align: center;
       margin-top: 30px;
       color: var(--black2);
-      font-size: 0.9em;
+      font-size: 0.95em;
     }
 
     .login-footer a {
@@ -271,75 +295,127 @@
     <form class="login-form">
       <div class="input-group">
         <label for="email">Correo Electrónico</label>
-        <ion-icon name="person-outline"></ion-icon>
-        <input type="email" id="email" placeholder="Ingresa tu correo">
+        <ion-icon name="person-outline" class="input-icon"></ion-icon>
+        <input type="email" id="email" placeholder="Ingresa tu correo electrónico registrado">
       </div>
 
       <div class="input-group">
         <label for="password">Contraseña</label>
-        <ion-icon name="lock-closed-outline"></ion-icon>
-        <input type="password" id="password" placeholder="Ingresa tu contraseña">
+        <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+        <input type="password" id="password" placeholder="Ingresa tu contraseña de acceso">
+        <ion-icon name="eye-outline" class="toggle-password" data-target="password"></ion-icon>
       </div>
 
-      <button type="button" class="login-btn">Iniciar Sesión</button>
+      <div class="remember-forgot">
+        <a href="#" id="forgot-password">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button type="button" class="login-btn" id="login-btn">Iniciar Sesión</button>
     </form>
 
-    <div class="university-logos">
-      <div class="university-logo">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/c/cb/Logo_UNAP.png" alt="Altiplano">
-      </div>
-      <div class="university-logo">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/f/f7/Uni-logo_transparente_granate.png" alt="UNI">
-      </div>
-    </div>
-
     <div class="login-footer">
-      ¿No tienes una cuenta? <a href="registro.html">Regístrate</a>
+      ¿No tienes una cuenta? <a href="pages/registro/registro.html">Regístrate</a>
     </div>
   </div>
 
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCzk6P6eFNCagNWgDJgoyqxUS9ZOZQP1_0",
-    authDomain: "reporte-dashboard-big-data.firebaseapp.com",
-    projectId: "reporte-dashboard-big-data",
-    storageBucket: "reporte-dashboard-big-data.firebasestorage.app",
-    messagingSenderId: "721546205620",
-    appId: "1:721546205620:web:ab29d6ef0977d6a0fc3ae1",
-    measurementId: "G-D3SC3HZM45"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzk6P6eFNCagNWgDJgoyqxUS9ZOZQP1_0",
+      authDomain: "reporte-dashboard-big-data.firebaseapp.com",
+      projectId: "reporte-dashboard-big-data",
+      storageBucket: "reporte-dashboard-big-data.firebasestorage.app",
+      messagingSenderId: "721546205620",
+      appId: "1:721546205620:web:ab29d6ef0977d6a0fc3ae1",
+      measurementId: "G-D3SC3HZM45"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-  loginBtn.addEventListener('click', async () => {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
+    // Elementos del DOM
+    const loginBtn = document.getElementById('login-btn');
+    const forgotPasswordLink = document.getElementById('forgot-password');
 
-    if (!email || !password) {
-      alert("Por favor completa todos los campos.");
-      return;
+    // Función para alternar visibilidad de contraseña
+    function setupPasswordToggle() {
+      const toggleButtons = document.querySelectorAll('.toggle-password');
+      
+      toggleButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const targetId = this.getAttribute('data-target');
+          const passwordInput = document.getElementById(targetId);
+          const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+          passwordInput.setAttribute('type', type);
+          
+          // Cambiar icono
+          this.setAttribute('name', type === 'password' ? 'eye-outline' : 'eye-off-outline');
+        });
+      });
     }
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert("Inicio de sesión exitoso.");
-      window.location.href = 'reporte_general_comparativo.html';  // redirección al dashboard
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      if (error.code === 'auth/user-not-found') {
-        alert("Usuario no encontrado.");
-      } else if (error.code === 'auth/wrong-password') {
-        alert("Contraseña incorrecta.");
-      } else {
-        alert("Error al iniciar sesión: " + error.message);
+    // Event Listeners
+    loginBtn.addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!email || !password) {
+        alert("Por favor completa todos los campos.");
+        return;
       }
-    }
-  });
-</script>
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("Inicio de sesión exitoso.");
+        window.location.href = 'pages/reportes/reporte_general_comparativo.html';
+      } catch (error) {
+        console.error("Error al iniciar sesión:", error);
+        if (error.code === 'auth/user-not-found') {
+          alert("Usuario no encontrado.");
+        } else if (error.code === 'auth/wrong-password') {
+          alert("Contraseña incorrecta.");
+        } else {
+          alert("Error al iniciar sesión: " + error.message);
+        }
+      }
+    });
+
+    // Recuperación de contraseña simple
+    forgotPasswordLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value.trim();
+      
+      if (!email) {
+        alert("Por favor ingresa tu correo electrónico en el campo correspondiente primero.");
+        return;
+      }
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Se ha enviado un enlace de restablecimiento de contraseña a tu correo electrónico. Por favor revisa tu bandeja de entrada.");
+      } catch (error) {
+        console.error("Error al enviar enlace de restablecimiento:", error);
+        
+        if (error.code === 'auth/user-not-found') {
+          alert("No se encontró una cuenta con ese correo electrónico.");
+        } else if (error.code === 'auth/invalid-email') {
+          alert("El correo electrónico no es válido.");
+        } else {
+          alert("Error al enviar el enlace de restablecimiento: " + error.message);
+        }
+      }
+    });
+
+    // Inicializar los botones de mostrar/ocultar contraseña
+    setupPasswordToggle();
+  </script>
 
   <script>
     // Efecto decorativo para las formas
@@ -355,12 +431,12 @@
     });
 
     // Efecto hover para el botón de login
-    const loginBtn = document.querySelector('.login-btn');
-    loginBtn.addEventListener('mouseenter', () => {
-      loginBtn.style.background = `linear-gradient(to right, ${getComputedStyle(document.documentElement).getPropertyValue('--uni')}, ${getComputedStyle(document.documentElement).getPropertyValue('--blue')})`;
+    const loginButton = document.querySelector('.login-btn');
+    loginButton.addEventListener('mouseenter', () => {
+      loginButton.style.background = `linear-gradient(to right, ${getComputedStyle(document.documentElement).getPropertyValue('--uni')}, ${getComputedStyle(document.documentElement).getPropertyValue('--blue')})`;
     });
-    loginBtn.addEventListener('mouseleave', () => {
-      loginBtn.style.background = `linear-gradient(to right, ${getComputedStyle(document.documentElement).getPropertyValue('--blue')}, ${getComputedStyle(document.documentElement).getPropertyValue('--uni')})`;
+    loginButton.addEventListener('mouseleave', () => {
+      loginButton.style.background = `linear-gradient(to right, ${getComputedStyle(document.documentElement).getPropertyValue('--blue')}, ${getComputedStyle(document.documentElement).getPropertyValue('--uni')})`;
     });
   </script>
 </body>
