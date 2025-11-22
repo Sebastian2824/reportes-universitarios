@@ -335,28 +335,105 @@
       left: 10%;
     }
 
-    .university-logos {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin-top: 30px;
-    }
-
-    .university-logo {
-      width: 40px;
-      height: 40px;
-      background: white;
-      border-radius: 50%;
-      display: flex;
+    /* Modal para código de administrador del sistema */
+    .admin-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
       justify-content: center;
       align-items: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 0.3s ease-out;
     }
 
-    .university-logo img {
-      width: 30px;
-      height: 30px;
-      object-fit: contain;
+    .admin-modal-content {
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .admin-modal-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .admin-modal-header h2 {
+      color: var(--blue);
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+
+    .admin-modal-header p {
+      color: var(--black2);
+      font-size: 0.9em;
+    }
+
+    .admin-modal-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid rgba(42, 33, 133, 0.2);
+      border-radius: 8px;
+      font-size: 1em;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+
+    .admin-modal-input:focus {
+      border-color: var(--blue);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(42, 33, 133, 0.1);
+    }
+
+    .admin-modal-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .admin-modal-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .admin-modal-btn.cancel {
+      background: var(--gray);
+      color: var(--black1);
+    }
+
+    .admin-modal-btn.confirm {
+      background: var(--blue);
+      color: white;
+    }
+
+    .admin-modal-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .admin-modal-btn:active {
+      transform: translateY(0);
+    }
+
+    .admin-modal-error {
+      color: var(--error);
+      font-size: 0.85em;
+      margin-top: 10px;
+      text-align: center;
+      display: none;
     }
 
     @media (max-width: 500px) {
@@ -368,6 +445,10 @@
       .register-header h1 {
         font-size: 1.8em;
       }
+      
+      .admin-modal-content {
+        padding: 20px;
+      }
     }
   </style>
 </head>
@@ -377,6 +458,22 @@
     <div class="shape shape-2"></div>
     <div class="shape shape-3"></div>
     <div class="shape shape-4"></div>
+  </div>
+
+  <!-- Modal para código de administrador del sistema -->
+  <div class="admin-modal" id="admin-modal">
+    <div class="admin-modal-content">
+      <div class="admin-modal-header">
+        <h2>Código de Administrador del Sistema</h2>
+        <p>Para seleccionar este rol, necesitas un código especial de acceso.</p>
+      </div>
+      <input type="password" class="admin-modal-input" id="admin-code-input" placeholder="Ingresa el código de administrador del sistema">
+      <div class="admin-modal-error" id="admin-modal-error">Código incorrecto. Inténtalo de nuevo.</div>
+      <div class="admin-modal-buttons">
+        <button class="admin-modal-btn cancel" id="admin-modal-cancel">Cancelar</button>
+        <button class="admin-modal-btn confirm" id="admin-modal-confirm">Verificar</button>
+      </div>
+    </div>
   </div>
 
   <div class="register-container">
@@ -404,7 +501,8 @@
         <select id="role">
           <option value="" disabled selected>Selecciona tu rol</option>
           <option value="analista">Analista</option>
-          <option value="administrador">Administrador</option>
+          <option value="administrador">Administrador - Analista</option>
+          <option value="administradorsistema">Administrador - Sistema</option>
         </select>
       </div>
 
@@ -475,7 +573,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-    import { getFirestore, collection, query, where, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+    import { getFirestore, collection, query, where, getDocs, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCzk6P6eFNCagNWgDJgoyqxUS9ZOZQP1_0",
@@ -497,6 +595,18 @@
     const confirmPasswordInput = document.getElementById('confirm-password');
     const strengthMeterFill = document.getElementById('strength-meter-fill');
     const strengthText = document.getElementById('strength-text');
+    const roleSelect = document.getElementById('role');
+
+    // Elementos del modal de administrador del sistema
+    const adminModal = document.getElementById('admin-modal');
+    const adminCodeInput = document.getElementById('admin-code-input');
+    const adminModalCancel = document.getElementById('admin-modal-cancel');
+    const adminModalConfirm = document.getElementById('admin-modal-confirm');
+    const adminModalError = document.getElementById('admin-modal-error');
+
+    // Variables para controlar la selección de rol
+    let pendingRoleSelection = null;
+    let systemAdminCode = null;
 
     // Elementos de requisitos de contraseña
     const lengthReq = document.getElementById('length-req');
@@ -623,6 +733,85 @@
     document.getElementById('role').addEventListener('change', updateRegisterButton);
     document.getElementById('access-code').addEventListener('input', updateRegisterButton);
 
+    // Manejar la selección de rol
+    roleSelect.addEventListener('change', function() {
+      if (this.value === 'administradorsistema') {
+        // Mostrar modal para código de administrador del sistema
+        pendingRoleSelection = this.value;
+        adminModal.style.display = 'flex';
+        adminCodeInput.focus();
+        // Limpiar errores previos
+        adminModalError.style.display = 'none';
+        adminCodeInput.value = '';
+      } else {
+        // Para otros roles, actualizar el botón de registro
+        updateRegisterButton();
+      }
+    });
+
+    // Manejar el modal de administrador del sistema
+    adminModalCancel.addEventListener('click', function() {
+      // Cancelar selección de rol
+      adminModal.style.display = 'none';
+      roleSelect.value = '';
+      pendingRoleSelection = null;
+    });
+
+    adminModalConfirm.addEventListener('click', async function() {
+      const enteredCode = adminCodeInput.value.trim();
+      
+      if (!enteredCode) {
+        adminModalError.textContent = 'Por favor, ingresa el código.';
+        adminModalError.style.display = 'block';
+        return;
+      }
+
+      try {
+        // Obtener el código de administrador del sistema desde Firestore
+        const accessDocRef = doc(db, 'Acceso', 'ywe7vKGMkOQWloYT4WEt');
+        const accessDoc = await getDoc(accessDocRef);
+        
+        if (accessDoc.exists()) {
+          const data = accessDoc.data();
+          systemAdminCode = data.cod_acces_sistem;
+          
+          if (enteredCode === systemAdminCode) {
+            // Código correcto, permitir selección del rol
+            adminModal.style.display = 'none';
+            roleSelect.value = pendingRoleSelection;
+            pendingRoleSelection = null;
+            updateRegisterButton();
+          } else {
+            // Código incorrecto
+            adminModalError.textContent = 'Código incorrecto. Inténtalo de nuevo.';
+            adminModalError.style.display = 'block';
+          }
+        } else {
+          // Documento no encontrado
+          adminModalError.textContent = 'Error al verificar el código. Inténtalo más tarde.';
+          adminModalError.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error al verificar código de administrador:', error);
+        adminModalError.textContent = 'Error al verificar el código. Inténtalo más tarde.';
+        adminModalError.style.display = 'block';
+      }
+    });
+
+    // Permitir presionar Enter en el campo de código del modal
+    adminCodeInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        adminModalConfirm.click();
+      }
+    });
+
+    // Cerrar modal al hacer clic fuera del contenido
+    adminModal.addEventListener('click', function(e) {
+      if (e.target === adminModal) {
+        adminModalCancel.click();
+      }
+    });
+
     registerBtn.addEventListener('click', async () => {
       const fullname = document.getElementById('fullname').value.trim();
       const email = document.getElementById('email').value.trim();
@@ -656,18 +845,25 @@
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Guardar información en Firestore
+        // Mapeo de valores internos a nombres legibles para el rol
+        const roleDisplayNames = {
+          'analista': 'Analista',
+          'administrador': 'Administrador - Analista', 
+          'administradorsistema': 'Administrador - Sistema'
+        };
+
+        // Guardar información en Firestore con el nombre legible del rol
         await setDoc(doc(db, 'usuario', user.uid), {
           nombreCompleto: fullname,
           email: email,
-          rol: role,
+          rol: roleDisplayNames[role] || role, // Usa el nombre legible o el original como fallback
           uid: user.uid,
           fechaRegistro: new Date(),
           codigoAcceso: accessCode
         });
 
         alert('Registro exitoso. ¡Ahora puedes iniciar sesión!');
-        window.location.href = 'index.html';
+        window.location.href = '../../index.html';
 
       } catch (error) {
         console.error(error);

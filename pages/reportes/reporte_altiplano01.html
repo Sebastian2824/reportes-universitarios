@@ -659,6 +659,15 @@
         <li><a href="reporte_general_comparativo.html" class="active"><span class="icon"><ion-icon name="home-outline"></ion-icon></span><span class="title">Reporte General</span></a></li>
         <li><a href="../perfil/perfil_usuario.html"><span class="icon"><ion-icon name="person-outline"></ion-icon></span><span class="title">Mi Perfil</span></a></li>
         <li><a href="../documentacion/documentacion.html" class="active"><span class="icon"><ion-icon name="document-text-outline"></ion-icon></span><span class="title">Documentación</span></a></li>
+        
+        <!-- Opción Gestionar Usuarios - Solo visible para administradores -->
+        <li id="adminUsersItem" style="display: none;">
+          <a href="../usuarios/gestion_usuarios.html">
+            <span class="icon"><ion-icon name="people-outline"></ion-icon></span>
+            <span class="title">Gestionar Usuarios</span>
+          </a>
+        </li>
+
         <li><a href="../../index.html"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Cerrar Sesión</span></a></li>
         <li>
           <a href="#"><span class="icon"><ion-icon name="business-outline"></ion-icon></span><span class="title">Altiplano</span><span class="icon dropdown-icon"><ion-icon name="chevron-down-outline"></ion-icon></span></a>
@@ -785,9 +794,11 @@
     </div>
   </div>
 
+   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCzk6P6eFNCagNWgDJgoyqxUS9ZOZQP1_0",
@@ -801,6 +812,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     const coleccion = "dashboards";
     const idDocumento = "altiplano-01"; 
@@ -820,7 +832,58 @@
       }
     }
 
-    cargarDashboard();
+    // Función para cargar información del usuario y controlar visibilidad del menú
+    async function loadUserInfo() {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          // Obtener datos adicionales de Firestore
+          const userDoc = await getDoc(doc(db, 'usuario', user.uid));
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Control de visibilidad para administradores en el menú
+            const adminUsersItem = document.getElementById('adminUsersItem');
+            if (adminUsersItem) {
+              if (userData.rol === 'Administrador - Sistema') {
+                adminUsersItem.style.display = 'block';
+              } else {
+                adminUsersItem.style.display = 'none';
+              }
+            }
+            
+          } else {
+            // Si no existe en Firestore, ocultar la opción
+            const adminUsersItem = document.getElementById('adminUsersItem');
+            if (adminUsersItem) {
+              adminUsersItem.style.display = 'none';
+            }
+          }
+        } catch (error) {
+          console.error("Error cargando datos del usuario:", error);
+          // En caso de error, ocultar la opción
+          const adminUsersItem = document.getElementById('adminUsersItem');
+          if (adminUsersItem) {
+            adminUsersItem.style.display = 'none';
+          }
+        }
+      } else {
+        // Si no hay usuario autenticado, redirigir al login
+        window.location.href = '../../index.html';
+      }
+    }
+
+    // Cargar información del usuario cuando cambie el estado de autenticación
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadUserInfo();
+        cargarDashboard();
+      } else {
+        // Redirigir al login si no hay usuario autenticado
+        window.location.href = '../../index.html';
+      }
+    });
   </script>
 
   <script>

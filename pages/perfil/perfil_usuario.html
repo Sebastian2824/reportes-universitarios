@@ -854,6 +854,15 @@
         <li><a href="../reportes/reporte_general_comparativo.html"><span class="icon"><ion-icon name="home-outline"></ion-icon></span><span class="title">Reporte General</span></a></li>
         <li><a href="perfil_usuario.html" class="active"><span class="icon"><ion-icon name="person-outline"></ion-icon></span><span class="title">Mi Perfil</span></a></li>
         <li><a href="../documentacion/documentacion.html" class="active"><span class="icon"><ion-icon name="document-text-outline"></ion-icon></span><span class="title">Documentación</span></a></li>
+        
+        <!-- Opción Gestionar Usuarios - Solo visible para administradores -->
+        <li id="adminUsersItem" style="display: none;">
+          <a href="../usuarios/gestion_usuarios.html">
+            <span class="icon"><ion-icon name="people-outline"></ion-icon></span>
+            <span class="title">Gestionar Usuarios</span>
+          </a>
+        </li>
+        
         <li><a href="../../index.html"><span class="icon"><ion-icon name="log-out-outline"></ion-icon></span><span class="title">Cerrar Sesión</span></a></li>
         <li>
           <a href="#"><span class="icon"><ion-icon name="business-outline"></ion-icon></span><span class="title">Altiplano</span><span class="icon dropdown-icon"><ion-icon name="chevron-down-outline"></ion-icon></span></a>
@@ -1009,11 +1018,14 @@
     <label>Nombre completo</label>
     <input type="text" id="newFullName" placeholder="Nuevo nombre completo">
     
-    <label>Rol</label>
-    <select id="newRole">
-      <option value="analista">Analista</option>
-      <option value="administrador">Administrador</option>
-    </select>
+    <!-- Sección de Rol - Solo visible para usuarios NO administradores -->
+    <div id="roleSection">
+      <label>Rol</label>
+      <select id="newRole">
+        <option value="analista">Analista</option>
+        <option value="administrador">Administrador</option>
+      </select>
+    </div>
     
     <label>Contraseña actual</label>
     <div class="input-group">
@@ -1088,6 +1100,9 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // Variable global para almacenar el rol del usuario
+    let currentUserRole = '';
+
     // Cargar información del usuario desde Firestore
     async function loadUserInfo() {
       const user = auth.currentUser;
@@ -1099,18 +1114,31 @@
           if (userDoc.exists()) {
             const userData = userDoc.data();
             
+            // Guardar el rol del usuario globalmente
+            currentUserRole = userData.rol || 'Usuario';
+            
             // Actualizar la interfaz con los datos reales
             document.getElementById('userName').textContent = userData.nombreCompleto || user.email;
             document.getElementById('userEmail').textContent = user.email;
             document.getElementById('displayEmail').textContent = user.email;
             document.getElementById('userEmailDisplay').textContent = "Correo registrado: " + user.email;
             document.getElementById('fullName').textContent = userData.nombreCompleto || 'No especificado';
-            document.getElementById('userRole').textContent = userData.rol || 'Usuario';
-            document.getElementById('displayRole').textContent = userData.rol || 'Usuario';
+            document.getElementById('userRole').textContent = currentUserRole;
+            document.getElementById('displayRole').textContent = currentUserRole;
             
             // Rellenar los campos del modal
             document.getElementById('newFullName').value = userData.nombreCompleto || '';
             document.getElementById('newRole').value = userData.rol || 'analista';
+            
+            // Control de visibilidad para administradores en el menú
+            const adminUsersItem = document.getElementById('adminUsersItem');
+            if (adminUsersItem) {
+              if (currentUserRole === 'Administrador - Sistema') {
+                adminUsersItem.style.display = 'block';
+              } else {
+                adminUsersItem.style.display = 'none';
+              }
+            }
             
             // Formatear fecha de registro
             if (userData.fechaRegistro) {
@@ -1158,6 +1186,22 @@
       document.getElementById('displayRole').textContent = 'Usuario';
       document.getElementById('registrationDate').textContent = 'No disponible';
       document.getElementById('lastAccess').textContent = new Date().toLocaleString('es-ES');
+      
+      // Control de visibilidad para administradores en caso básico
+      const adminUsersItem = document.getElementById('adminUsersItem');
+      if (adminUsersItem) {
+        adminUsersItem.style.display = 'none';
+      }
+    }
+
+    // Función para controlar la visibilidad de la sección de rol en el modal
+    function toggleRoleSectionVisibility() {
+      const roleSection = document.getElementById('roleSection');
+      if (currentUserRole === 'Administrador - Sistema') {
+        roleSection.style.display = 'none';
+      } else {
+        roleSection.style.display = 'block';
+      }
     }
 
     // Validación de contraseña en tiempo real para el modal
@@ -1283,12 +1327,19 @@
         
         let updatesMade = false;
 
-        // Actualizar nombre y rol en Firestore
+        // Preparar datos para actualizar
+        const updateData = {
+          nombreCompleto: newFullName
+        };
+
+        // Solo actualizar el rol si el usuario NO es Administrador - Sistema
+        if (currentUserRole !== 'Administrador - Sistema') {
+          updateData.rol = newRole;
+        }
+
+        // Actualizar datos en Firestore
         try {
-          await updateDoc(doc(db, 'usuario', user.uid), {
-            nombreCompleto: newFullName,
-            rol: newRole
-          });
+          await updateDoc(doc(db, 'usuario', user.uid), updateData);
           updatesMade = true;
         } catch (firestoreError) {
           console.error("Error actualizando datos en Firestore:", firestoreError);
@@ -1351,6 +1402,10 @@
       }
       document.getElementById("settingsModal").style.display = "block";
       document.getElementById("modalOverlay").style.display = "block";
+      
+      // Controlar visibilidad de la sección de rol
+      toggleRoleSectionVisibility();
+      
       // Rellenar campos del modal con info actual
       loadUserInfo();
       validateModalPassword();
